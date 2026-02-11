@@ -1,0 +1,50 @@
+services:
+  # قاعدة البيانات
+  vts:
+    image: postgres:15-alpine
+    container_name: postgres_db
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: "0000"
+      POSTGRES_DB: vts
+    ports:
+      - "5435:5432"
+    restart: always
+
+  # الـ Backend (NestJS)
+  api:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: nestjs_api
+    depends_on:
+      - vts
+    ports:
+      - "8900:8900"
+    environment:
+      POSTGRES_HOST: vts
+      POSTGRES_PORT: 5432
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: "0000"
+      POSTGRES_DB: vts
+      APP_PORT: 8900
+      JWT_SECRET: "MySuperStrongSecret_123!@#"
+    volumes:
+      - ./backend:/app
+      - /app/node_modules
+    restart: always
+
+  # الـ Frontend (Next.js/React)
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: next_frontend
+    depends_on:
+      - api # عشان يتأكد إن الـ API قايم الأول
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    restart: always
